@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <title>💖 San Valentin 2026 💖</title>
+        <meta name="viewpoint" content="width=device-width", initial-scale="1.0"/>
+
+        <style>
+            body {
+            margin: 0;
+            font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #ff9a9e, #fad0c4);
+            height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+            }
+
+            .card {
+            background: white;
+            padding: 32px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+            text-align: center;
+            }   
+            
+            h1 {
+            margin-bottom: 16px;
+            }
+
+            input {
+            width: 100%;
+            padding: 12px;
+            margin-top: 12px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: 1px solid #ccc;
+            }
+
+            button {
+            margin-top: 16px;
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            border-radius: 8px;
+            border: none;
+            background: #ff5a7a;
+            color: white;
+            font-weight: 600;
+            cursor: pointer;
+            }
+
+            button:hover {
+            background: #ff3f64;
+            }
+
+            .error {
+            margin-top: 12px;
+            color: #d00000;
+            display: none;
+            }
+
+        </style>
+    </head>
+
+    <body>
+        <div class="card">
+            <h1> Bienvenida, dueña de mi corazón </h1>
+            <h2> Ingresa la contraseña para entrar</h2>
+            <p> (Hint/Pista: Nombre del gusano colorido que nombramos juntos en tu cuarto, todo minuscula y junto")</p>
+
+            <input type="password" id="passwordInput" placeholder="Contraseña besha" />
+            <button id="loginBtn">Ingresar</button>
+
+            <div class="error" id="errorMsg">No te acuerdas 😞</div>
+        </div>
+
+        <script>
+            const correctPassword = "pablonelgusanomaricon";
+
+
+            const passwordInput = document.getElementById('passwordInput');
+            const loginBtn = document.getElementById('loginBtn');
+            const errorMsg = document.getElementById('errorMsg');
+
+            if (localStorage.getItem('valentineLoggedIn') == "true"){
+                redirectToGame();
+            }
+
+            loginBtn.addEventListener("click", tryLogin);
+            passwordInput.addEventListener("keydown", (e) => {
+                if (e.key == "Enter"){
+                    tryLogin();
+                }
+            })
+
+            function tryLogin(){
+                const enteredPassword = passwordInput.value;
+
+                if(enteredPassword == correctPassword) {
+                    localStorage.setItem("valentineLoggedIn", "true");
+                    redirectToGame();
+                } else {
+                    errorMsg.style.display = "block";
+                    passwordInput.value = "";
+                }
+            }
+
+            function redirectToGame(){
+                window.location.href = "game.html";
+            }
+        </script>
+
+
+    </body>
+
+
+</html>
