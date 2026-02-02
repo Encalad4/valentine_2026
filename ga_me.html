@@ -5,6 +5,9 @@
 <title>Emoji Merge 💖</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
+<!-- EMAILJS -->
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+
 <style>
 body {
   margin: 0;
@@ -14,6 +17,7 @@ body {
   flex-direction: column;
   align-items: center;
   min-height: 100vh;
+  overflow-x: hidden;
 }
 
 h1 {
@@ -153,13 +157,32 @@ h1 {
 }
 
 @keyframes pop {
-  from {
-    transform: scale(0.9);
-    opacity: 0;
-  }
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* === CONFETTI === */
+
+.confetti-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 2000;
+}
+
+.confetti {
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  opacity: 0.9;
+  animation: fall linear forwards;
+}
+
+@keyframes fall {
   to {
-    transform: scale(1);
-    opacity: 1;
+    transform: translateY(110vh) rotate(720deg);
+    opacity: 0;
   }
 }
 </style>
@@ -176,24 +199,30 @@ h1 {
 <div class="modal-overlay" id="modal">
   <div class="modal">
     <h2>💌</h2>
-    <p id="modal-text">Aquí va tu mensaje 💖</p>
+    <p id="modal-text"></p>
     <div class="modal-buttons">
-      <button class="btn accept">Acepto</button>
-      <button class="btn super-accept">Re contra acepto</button>
+      <button class="btn accept" data-answer="Acepto">Acepto</button>
+      <button class="btn super-accept" data-answer="Re contra acepto">Re contra acepto</button>
     </div>
   </div>
 </div>
 
+<!-- CONFETTI -->
+<div class="confetti-container" id="confetti"></div>
+
 <script>
+/* =======================
+   EMAILJS INIT
+======================= */
+(function(){
+  emailjs.init("PF2gYEKUtlr4qjaqc");
+})();
+
 /* =======================
    GAME CONFIGURATION
 ======================= */
 
-const HIERARCHY = [
-  "💧", "🌱", "🌿", "🌸", "🦋",
-  "💕", "❤️", "💖", "💌", "📜"
-];
-
+const HIERARCHY = ["💧","🌱","🌿","🌸","🦋","💕","❤️","💖","💌","📜"];
 const BASIC = "💧";
 const GRID_SIZE = 12;
 
@@ -209,15 +238,14 @@ const SOUNDS = [
    STATE
 ======================= */
 
-let tiles = JSON.parse(localStorage.getItem("tiles")) ||
-  Array(GRID_SIZE).fill(BASIC);
-
+let tiles = JSON.parse(localStorage.getItem("tiles")) || Array(GRID_SIZE).fill(BASIC);
 let draggedIndex = null;
 
 const grid = document.getElementById("grid");
 const instructions = document.getElementById("instructions");
 const modal = document.getElementById("modal");
 const modalText = document.getElementById("modal-text");
+const confettiContainer = document.getElementById("confetti");
 
 /* =======================
    UTILITIES
@@ -228,62 +256,68 @@ function save() {
 }
 
 function playSound() {
-  const src = SOUNDS[Math.floor(Math.random() * SOUNDS.length)];
-  const audio = new Audio(src);
+  const audio = new Audio(SOUNDS[Math.floor(Math.random()*SOUNDS.length)]);
   audio.volume = 0.6;
   audio.play();
 }
 
-function nextEmoji(emoji) {
-  const i = HIERARCHY.indexOf(emoji);
-  return i >= 0 && i < HIERARCHY.length - 1
-    ? HIERARCHY[i + 1]
-    : null;
+function nextEmoji(e) {
+  const i = HIERARCHY.indexOf(e);
+  return i >= 0 && i < HIERARCHY.length - 1 ? HIERARCHY[i + 1] : null;
 }
 
 /* =======================
-   RENDER GRID (DESKTOP + MOBILE)
+   EMAIL SEND
+======================= */
+
+function sendEmail(answer) {
+  emailjs.send("service_pz4rouf","template_jdg5l89",{
+    decision: answer,
+    date: new Date().toLocaleString()
+  });
+}
+
+/* =======================
+   CONFETTI
+======================= */
+
+function launchConfetti() {
+  for (let i = 0; i < 120; i++) {
+    const c = document.createElement("div");
+    c.className = "confetti";
+    c.style.left = Math.random() * 100 + "vw";
+    c.style.backgroundColor = ["#ff8fab","#ffd6e0","#ffc9de","#ffb3c6","#fb6f92"][Math.floor(Math.random()*5)];
+    c.style.animationDuration = (2 + Math.random() * 2) + "s";
+    c.style.transform = `rotate(${Math.random()*360}deg)`;
+    confettiContainer.appendChild(c);
+    setTimeout(() => c.remove(), 4000);
+  }
+}
+
+/* =======================
+   RENDER GRID
 ======================= */
 
 function render() {
   grid.innerHTML = "";
+  tiles.forEach((emoji,index)=>{
+    const tile=document.createElement("div");
+    tile.className="tile";
+    tile.textContent=emoji;
+    tile.dataset.index=index;
+    tile.draggable=true;
 
-  tiles.forEach((emoji, index) => {
-    const tile = document.createElement("div");
-    tile.className = "tile";
-    tile.textContent = emoji;
-    tile.dataset.index = index;
-    tile.draggable = true;
+    tile.addEventListener("dragstart",()=>{draggedIndex=index;tile.classList.add("dragging");});
+    tile.addEventListener("dragend",()=>{draggedIndex=null;tile.classList.remove("dragging");});
+    tile.addEventListener("dragover",e=>e.preventDefault());
+    tile.addEventListener("drop",()=>handleDrop(index));
 
-    /* === DESKTOP DRAG === */
-    tile.addEventListener("dragstart", () => {
-      draggedIndex = index;
-      tile.classList.add("dragging");
-    });
-
-    tile.addEventListener("dragend", () => {
-      draggedIndex = null;
+    tile.addEventListener("touchstart",()=>{draggedIndex=index;tile.classList.add("dragging");});
+    tile.addEventListener("touchend",e=>{
       tile.classList.remove("dragging");
-    });
-
-    tile.addEventListener("dragover", e => e.preventDefault());
-    tile.addEventListener("drop", () => handleDrop(index));
-
-    /* === MOBILE TOUCH === */
-    tile.addEventListener("touchstart", () => {
-      draggedIndex = index;
-      tile.classList.add("dragging");
-    });
-
-    tile.addEventListener("touchend", e => {
-      tile.classList.remove("dragging");
-      const touch = e.changedTouches[0];
-      const target = document.elementFromPoint(touch.clientX, touch.clientY);
-      const targetTile = target?.closest(".tile");
-      if (targetTile) {
-        handleDrop(Number(targetTile.dataset.index));
-      }
-      draggedIndex = null;
+      const t=document.elementFromPoint(e.changedTouches[0].clientX,e.changedTouches[0].clientY)?.closest(".tile");
+      if(t) handleDrop(Number(t.dataset.index));
+      draggedIndex=null;
     });
 
     grid.appendChild(tile);
@@ -295,74 +329,52 @@ function render() {
 ======================= */
 
 function renderInstructions() {
-  instructions.innerHTML = `
+  instructions.innerHTML=`
     <h2>📖 Cómo se juega</h2>
     <ul>
       <li>Arrastra (o desliza) un emoji sobre otro igual.</li>
       <li>Al mezclarlos, evolucionan.</li>
       <li>El original vuelve a ${BASIC}.</li>
     </ul>
-
     <h2>🏁 Fin del juego</h2>
-    <p>
-      El juego termina cuando creas:
-      <strong>${HIERARCHY[HIERARCHY.length - 1]}</strong>.
-    </p>
-
+    <p>El juego termina cuando creas: <strong>${HIERARCHY.at(-1)}</strong>.</p>
     <h2>🔗 Jerarquía</h2>
-    <div class="hierarchy">
-      ${HIERARCHY.map(e => `<span>${e}</span>`).join("→")}
-    </div>
+    <div class="hierarchy">${HIERARCHY.map(e=>`<span>${e}</span>`).join("→")}</div>
   `;
 }
 
 /* =======================
-   MODAL LOGIC
+   MODAL
 ======================= */
 
 function showModal(text) {
-  modalText.textContent = text;
+  modalText.textContent=text;
   modal.classList.add("show");
 }
 
-function hideModal() {
-  modal.classList.remove("show");
-}
-
-modal.querySelectorAll(".btn").forEach(btn =>
-  btn.addEventListener("click", hideModal)
-);
+document.querySelectorAll(".btn").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    sendEmail(btn.dataset.answer);
+    launchConfetti();
+    modal.classList.remove("show");
+  });
+});
 
 /* =======================
    GAME LOGIC
 ======================= */
 
 function handleDrop(targetIndex) {
-  if (draggedIndex === null || draggedIndex === targetIndex) return;
-
-  const a = tiles[draggedIndex];
-  const b = tiles[targetIndex];
-
-  if (a === b) {
-    const upgraded = nextEmoji(a);
-    if (upgraded) {
-      tiles[targetIndex] = upgraded;
-      tiles[draggedIndex] = BASIC;
-      playSound();
-      save();
-
-      if (upgraded === "📜") {
-        setTimeout(() => {
-          showModal(
-            "Hola corazón, completaste el juego jeje"+
-            ". \n\nEspero te hayas divertido, porque se lo mucho que te envisian este tipo de juegos jajaja. Te amo mucho mucho mucho mi amor, y hay una cosa que te quería preguntar... "+
-            "\n\n¿Quieres ser mi valentine el 14 de febrero? 💖"
-          );
-        }, 200);
-      }
+  if(draggedIndex===null||draggedIndex===targetIndex) return;
+  if(tiles[draggedIndex]===tiles[targetIndex]) {
+    const up=nextEmoji(tiles[targetIndex]);
+    if(up){
+      tiles[targetIndex]=up;
+      tiles[draggedIndex]=BASIC;
+      playSound(); save();
+      if(up==="📜") setTimeout(()=>showModal("¿Quieres ser mi valentine el 14 de febrero? 💖"),200);
     }
   }
-
   render();
 }
 
