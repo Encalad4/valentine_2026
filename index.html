@@ -88,6 +88,7 @@
       font-size: 0.95rem;
       display: none;
     }
+    
   </style>
 </head>
 
@@ -120,7 +121,9 @@
     const errorMsg = document.getElementById("errorMsg");
 
     const failSound = new Audio("sounds/failedLogin.mp3");
-
+    const successSound = new Audio("sounds/yipi.mp3");
+    successSound.preload = "auto";
+    failSound.preload = "auto";
     if (localStorage.getItem("valentineLoggedIn") === "true") {
       redirectToGame();
     }
@@ -135,11 +138,15 @@
     function tryLogin() {
       if (passwordInput.value === correctPassword) {
         localStorage.setItem("valentineLoggedIn", "true");
-        redirectToGame();
+        successSound.play();
+        successSound.onended = () => {
+          redirectToGame();
+        };
       } else {
         errorMsg.style.display = "block";
         failSound.currentTime = 0;
         failSound.play();
+        
         passwordInput.value = "";
       }
     }

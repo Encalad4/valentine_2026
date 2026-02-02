@@ -5,9 +5,6 @@
 <title>Emoji Merge 💖</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 
-<!-- EMAILJS -->
-<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
-
 <style>
 body {
   margin: 0;
@@ -179,22 +176,15 @@ h1 {
 <div class="modal-overlay" id="modal">
   <div class="modal">
     <h2>💌</h2>
-    <p id="modal-text"></p>
+    <p id="modal-text">Aquí va tu mensaje 💖</p>
     <div class="modal-buttons">
-      <button class="btn accept" data-answer="Acepto">Acepto</button>
-      <button class="btn super-accept" data-answer="Re contra acepto">Re contra acepto</button>
+      <button class="btn accept">Acepto</button>
+      <button class="btn super-accept">Re contra acepto</button>
     </div>
   </div>
 </div>
 
 <script>
-/* =======================
-   EMAILJS INIT
-======================= */
-(function(){
-  emailjs.init("PF2gYEKUtlr4qjaqc");
-})();
-
 /* =======================
    GAME CONFIGURATION
 ======================= */
@@ -252,22 +242,7 @@ function nextEmoji(emoji) {
 }
 
 /* =======================
-   EMAIL SEND
-======================= */
-
-function sendEmail(answer) {
-  emailjs.send(
-    "service_pz4rouf",
-    "template_jdg5l89",
-    {
-      decision: answer,
-      date: new Date().toLocaleString()
-    }
-  );
-}
-
-/* =======================
-   RENDER GRID
+   RENDER GRID (DESKTOP + MOBILE)
 ======================= */
 
 function render() {
@@ -280,6 +255,7 @@ function render() {
     tile.dataset.index = index;
     tile.draggable = true;
 
+    /* === DESKTOP DRAG === */
     tile.addEventListener("dragstart", () => {
       draggedIndex = index;
       tile.classList.add("dragging");
@@ -293,6 +269,7 @@ function render() {
     tile.addEventListener("dragover", e => e.preventDefault());
     tile.addEventListener("drop", () => handleDrop(index));
 
+    /* === MOBILE TOUCH === */
     tile.addEventListener("touchstart", () => {
       draggedIndex = index;
       tile.classList.add("dragging");
@@ -348,12 +325,13 @@ function showModal(text) {
   modal.classList.add("show");
 }
 
-document.querySelectorAll(".btn").forEach(btn => {
-  btn.addEventListener("click", () => {
-    sendEmail(btn.dataset.answer);
-    modal.classList.remove("show");
-  });
-});
+function hideModal() {
+  modal.classList.remove("show");
+}
+
+modal.querySelectorAll(".btn").forEach(btn =>
+  btn.addEventListener("click", hideModal)
+);
 
 /* =======================
    GAME LOGIC
@@ -376,7 +354,9 @@ function handleDrop(targetIndex) {
       if (upgraded === "📜") {
         setTimeout(() => {
           showModal(
-            "¿Quieres ser mi valentine el 14 de febrero? 💖"
+            "Hola corazón, completaste el juego jeje"+
+            ". \n\nEspero te hayas divertido, porque se lo mucho que te envisian este tipo de juegos jajaja. Te amo mucho mucho mucho mi amor, y hay una cosa que te quería preguntar... "+
+            "\n\n¿Quieres ser mi valentine el 14 de febrero? 💖"
           );
         }, 200);
       }
